@@ -69,10 +69,12 @@ details.facet summary > .name{flex:1}
 .facet .clear{font-weight:400}
 .facet .n-sel{font:500 11px var(--body);background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:1px 7px}
 .facet-search{width:100%;font:inherit;font-size:13px;margin:8px 0 4px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
-.opts{max-height:232px;overflow:auto;margin-top:6px;display:flex;flex-direction:column;gap:1px}
-.opt{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:14px}
+/* Each option is 30px tall with a 1px gap, so this shows four and scrolls the rest. */
+.opts{max-height:123px;overscroll-behavior:contain;overflow:auto;margin-top:6px;display:flex;flex-direction:column;gap:1px}
+.opt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;height:30px;padding:0 6px;border-radius:6px;cursor:pointer;font-size:14px}
 .opt:hover{background:var(--sunk)}
 .opt input{accent-color:var(--accent);margin:0}
+.opt > span:not(.c){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .opt .c{font:12px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
 .opt.zero{opacity:.42}
 .opt .blank{font-style:italic;color:var(--muted)}
@@ -361,7 +363,7 @@ for (const m of FACETED) {
       oninput: e => { const s = e.target.value.trim().toLowerCase(); items.forEach(it => it.label.hidden = !!s && !it.text.includes(s)); } }));
   }
   kids.push(list);
-  const det = h('details', { class: 'facet', open: toks.length <= 30 || null }, kids);
+  const det = h('details', { class: 'facet', open: true }, kids);
   facetsBox.append(det);
   facetEls.set(m.c, { items, nSel, clear });
 }
