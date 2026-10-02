@@ -85,6 +85,8 @@ details.facet summary > .name{flex:1}
 .chip i{font-style:normal;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;color:var(--accent);font-size:15px;line-height:1}
 .chip:hover i{background:var(--accent);color:var(--accent-ink)}
 .show-filters{display:none}
+.mobile-sort{display:none;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.mobile-sort select{font:inherit;font-size:13px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 8px;max-width:190px}
 
 .table-box{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:calc(100vh - 140px)}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -147,13 +149,42 @@ dl.fields dd{white-space:pre-line}
 .sib-thumb{display:block;width:32px;height:40px;border-radius:4px;object-fit:cover;background:var(--sunk)}
 
 @media (max-width:860px){
-  .layout{grid-template-columns:1fr}
+  .layout{grid-template-columns:minmax(0,1fr)}
+  main{min-width:0}
   aside.filters{display:none;position:static;max-height:none;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 14px 10px}
   aside.filters.open{display:block}
   .show-filters{display:inline-flex}
   .table-box{max-height:none}
   .sheet{width:100%;height:auto;max-height:88%;margin-top:auto;border-radius:16px 16px 0 0}
   .scrim{align-items:flex-end}
+}
+@media (max-width:640px){
+  .wrap{padding-block:18px 32px}
+  .search{max-width:none}
+  .mobile-sort{display:inline-flex}
+  .total{margin-left:0;width:100%;justify-content:flex-start;text-align:left}
+  .table-box{overflow:visible}
+  table,tbody{display:block}
+  thead{display:none}
+  tbody tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px;position:relative;min-height:96px;padding:12px 12px 12px 96px;border-bottom:1px solid var(--line)}
+  tbody tr:last-child{border-bottom:0}
+  tbody tr:hover{background:var(--sunk)}
+  tbody tr:hover td{background:none}
+  td{display:block;padding:0;border:0}
+  td.nil{display:none}
+  td.img-cell{position:absolute;left:12px;top:12px;width:auto;padding:0}
+  td.first{order:1;flex-basis:100%;padding-right:76px;white-space:normal;font-size:17px;line-height:1.25}
+  td[data-col="price"]{position:absolute;right:12px;top:14px}
+  td[data-col="colour"]{order:2}
+  td[data-col="where from"]{order:3}
+  td[data-col="native"]{order:4}
+  td[data-col="excess"]{order:5}
+  td[data-col="description"]{order:6;flex-basis:100%;font-size:13px;color:var(--muted)}
+  td[data-col="description"] .line2{display:inline;font-size:inherit}
+  td[data-col="description"] .line2::before{content:" · "}
+  td[data-label]{display:inline-flex;align-items:center;gap:4px}
+  td[data-label]::before{content:attr(data-label);font-size:12px;color:var(--muted)}
+  td.nil[data-label]{display:none}
 }
 </style>
 </head>
@@ -374,7 +405,11 @@ const renderBody = () => {
     onclick: () => openDetail(idx),
     onkeydown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(idx); } } },
     HAS_IMG ? h('td', { class: 'img-cell' }, h('span', { class: 'thumb-box' }, thumb(r, 'thumb'))) : null,
-    SHOWN.map((m, k) => h('td', { class: k === 0 ? 'first' : null }, cell(m, r.v[m.c], k === 0))))));
+    SHOWN.map((m, k) => h('td', {
+      class: [k === 0 ? 'first' : '', !r.v[m.c] || (m.kind === 'number' && Number(r.v[m.c]) === 0) ? 'nil' : ''].join(' ').trim() || null,
+      'data-col': m.name.toLowerCase(),
+      'data-label': m.kind === 'bool' || m.kind === 'number' ? m.name : null,
+    }, cell(m, r.v[m.c], k === 0))))));
   document.getElementById('empty').hidden = state.view.length > 0;
 };
 
@@ -426,7 +461,7 @@ const totalEl = () => {
   const day = FX.date ? new Date(FX.date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }) : '';
   return h('span', { class: 'total', title: parts.join(' + ') + (rateText ? `\n${rateText} (${FX.source}, ${FX.date})` : '') },
     'Total ', h('b', {}, `${fmtHome(sum)} ${HOME}`),
-    h('small', {}, (foreign.length ? `${foreign.join(' and ')} converted at ${day} rates` : 'all in ' + HOME) + note));
+    note ? h('small', {}, note.replace(/^ · /, '')) : null);
 };
 
 const renderBar = () => {
@@ -440,6 +475,10 @@ const renderBar = () => {
   bar.replaceChildren(
     h('button', { class: 'chip show-filters', type: 'button', 'aria-expanded': String(filtersEl.classList.contains('open')),
       onclick: () => { filtersEl.classList.toggle('open'); renderBar(); } }, filtersEl.classList.contains('open') ? 'Hide filters' : `Filters${n ? ` (${n})` : ''}`),
+    h('label', { class: 'mobile-sort' }, 'Sort by ',
+      h('select', { id: 'sortSel', onchange: e => { const [c, dir] = e.target.value.split(':').map(Number); state.sort = { c, dir }; update(); } },
+        SHOWN.flatMap(m => [1, -1].map(dir => h('option', { value: `${m.c}:${dir}`, selected: state.sort.c === m.c && state.sort.dir === dir || null },
+          `${m.name} ${m.kind === 'number' || m.kind === 'money' ? (dir > 0 ? '(low–high)' : '(high–low)') : (dir > 0 ? '(A–Z)' : '(Z–A)')}`))))),
     h('span', { class: 'count' }, 'Showing ', h('b', {}, state.view.length), ' of ', h('b', {}, ROWS.length), ' flowers'),
     ...chips, totalEl());
   document.getElementById('clearAll').hidden = !n;
