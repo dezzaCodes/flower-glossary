@@ -6,6 +6,7 @@ and rewrites images.json. Exits non-zero without writing anything if the sheet i
 The sheet ID comes from the environment so it never appears in this public repository.
 """
 import base64, csv, datetime, io, json, os, re, sys, urllib.request
+import html as html_lib
 from concurrent.futures import ThreadPoolExecutor
 from html.parser import HTMLParser
 from PIL import Image
@@ -61,6 +62,7 @@ def main(page="index.html", out_dir="."):
         sys.exit("Sheet has no data rows. Nothing published.")
 
     html_view, _ = get(SHEET + "/htmlview/sheet?headers=true&gid=0")
+    title = sheet_title()
     parser = SheetImages()
     parser.feed(html_view.decode("utf-8", "replace"))
 
@@ -77,6 +79,7 @@ def main(page="index.html", out_dir="."):
         "rows": [r + [""] * (len(cols) - len(r)) for _, r in kept],
         "images": len(images),
         "sheet": SHEET + "/edit?usp=sharing",
+        "sheetTitle": title,
     }
     blob = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
     html = open(page, encoding="utf-8").read()
@@ -90,6 +93,16 @@ def main(page="index.html", out_dir="."):
     json.dump(images, open(os.path.join(out_dir, "images.json"), "w"), separators=(",", ":"))
     print(f"{len(cols)} columns, {len(kept)} rows, {len(images)} images "
           f"({os.path.getsize(os.path.join(out_dir, 'images.json')) // 1024} KB)")
+
+
+def sheet_title():
+    """The spreadsheet's name, or "" if Google doesn't say."""
+    try:
+        page, _ = get(SHEET + "/htmlview")
+        m = re.search(r'property="og:title" content="([^"]*)"', page.decode("utf-8", "replace"))
+        return html_lib.unescape(m.group(1)).strip() if m else ""
+    except Exception:
+        return ""
 
 
 def _safe(fn, arg):
