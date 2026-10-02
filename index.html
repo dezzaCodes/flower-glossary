@@ -218,7 +218,7 @@ dl.fields dd{white-space:pre-line}
     </aside>
     <main>
       <div class="bar" id="bar"></div>
-      <div class="table-box"><table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table><div class="empty" id="empty" hidden>No flowers match these filters.</div></div>
+      <div class="table-box" id="tableBox"><table><thead><tr id="thead"></tr></thead><tbody id="tbody"></tbody></table><div class="empty" id="empty" hidden>No flowers match these filters.</div></div>
     </main>
   </div>
 </div>
@@ -499,7 +499,7 @@ const renderBar = () => {
 document.getElementById('clearAll').onclick = () => { state.sel.clear(); update(); };
 
 // ---------- update ----------
-function update() {
+function update(toTop = true) {
   const { c, dir } = state.sort; const kind = META[c].kind;
   state.view = ROWS.filter(r => passes(r)).sort((a, b) => {
     const x = a.v[c], y = b.v[c];
@@ -507,6 +507,7 @@ function update() {
     return (x ? dir * cmpVal(kind, x, y) : 0) || (c !== 0 && a.v[0].localeCompare(b.v[0])) || a.i - b.i;
   });
   renderHead(); renderBody(); renderBar(); updateFacets();
+  if (toTop) scrollToTable();
 }
 
 let qTimer;
@@ -571,7 +572,19 @@ if (HAS_IMG) fetch('images.json').then(res => res.ok ? res.json() : {}).then(j =
   if (cur >= 0) openDetail(cur);
 }).catch(() => {});
 
-update();
+// After a filter, search or sort change, show the first rows: reset the table's own scroll and,
+// if the page is scrolled past the table's top, bring it back into view.
+function scrollToTable() {
+  const box = document.getElementById('tableBox');
+  box.scrollTop = 0;
+  const top = bar.getBoundingClientRect().top;
+  if (top < 0) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: window.scrollY + top - 12, behavior: reduce ? 'auto' : 'smooth' });
+  }
+}
+
+update(false);
 })();
 </script>
 
