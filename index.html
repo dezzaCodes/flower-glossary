@@ -456,7 +456,7 @@ function openDetail(idx) {
       close),
     HAS_IMG && IMGS[r.i] ? h('img', { class: 'hero', src: IMGS[r.i], alt: '' }) : null,
     h('h2', { id: 'sheetTitle' }, r.v[0] || '(untitled)'),
-    h('dl', { class: 'fields' }, META.slice(1).flatMap(m => [
+    h('dl', { class: 'fields' }, META.slice(1).filter(m => m.kind !== 'empty' && m.name.toLowerCase() !== 'image').flatMap(m => [
       h('dt', {}, m.name),
       h('dd', {}, !r.v[m.c] ? h('span', { class: 'dash' }, '—')
         : m.kind === 'url' ? h('a', { href: r.v[m.c], target: '_blank', rel: 'noopener' }, r.v[m.c])
