@@ -527,8 +527,11 @@ const renderBar = () => {
       onclick: () => { filtersEl.classList.add('open'); renderBar(); } }, `Filters${n ? ` (${n})` : ''}`),
     h('label', { class: 'mobile-sort' }, 'Sort by ',
       h('select', { id: 'sortSel', onchange: e => { const [c, dir] = e.target.value.split(':').map(Number); state.sort = { c, dir }; update(); } },
-        SHOWN.filter(m => !PHONE_NO_SORT.includes(m.name.toLowerCase()) || state.sort.c === m.c).flatMap(m => [1, -1].map(dir => h('option', { value: `${m.c}:${dir}`, selected: state.sort.c === m.c && state.sort.dir === dir || null },
-          `${m.name} ${m.kind === 'number' || m.kind === 'money' ? (dir > 0 ? '(low–high)' : '(high–low)') : (dir > 0 ? '(A–Z)' : '(Z–A)')}`))))),
+        SHOWN.filter(m => !PHONE_NO_SORT.includes(m.name.toLowerCase()) || state.sort.c === m.c)
+          // Yes/no columns get one option that puts the yeses first ("No" < "Yes", so descending).
+          .flatMap(m => (m.kind === 'bool' ? [-1] : [1, -1]).map(dir => h('option', { value: `${m.c}:${dir}`, selected: state.sort.c === m.c && (m.kind === 'bool' || state.sort.dir === dir) || null },
+            m.kind === 'bool' ? `${m.name} first`
+              : `${m.name} ${m.kind === 'number' || m.kind === 'money' ? (dir > 0 ? '(low–high)' : '(high–low)') : (dir > 0 ? '(A–Z)' : '(Z–A)')}`))))),
     h('span', { class: 'count' }, 'Showing ', h('b', {}, state.view.length), ' of ', h('b', {}, ROWS.length), ' flowers'),
     ...chips, totalEl());
   document.getElementById('clearAll').hidden = !n;
