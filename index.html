@@ -15,6 +15,8 @@
   --line:#DCE2D8; --accent:#7B2E63; --accent-ink:#FFFFFF; --accent-soft:#F3E5EE;
   --moss:#3D6A48; --moss-soft:#E2EEE4; --clay:#8A5A2B; --clay-soft:#F3E9DD;
   --shadow:0 12px 40px rgba(30,38,32,.16);
+  --c1-bg:#E1ECF7; --c1-fg:#24548A; --c2-bg:#F6EBD6; --c2-fg:#7A5414; --c3-bg:#DCF0EC; --c3-fg:#1F6458;
+  --c4-bg:#F7E1E6; --c4-fg:#8A2F45; --c5-bg:#E9E3F6; --c5-fg:#4F3A85; --c6-bg:#ECEFD9; --c6-fg:#55601F;
   --display:"Young Serif",Georgia,"Times New Roman",serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -25,6 +27,8 @@
   --line:#2C352F; --accent:#DE93C4; --accent-ink:#1E1219; --accent-soft:#3A2333;
   --moss:#92C59F; --moss-soft:#1F3226; --clay:#E0B17F; --clay-soft:#3A2C1D;
   --shadow:0 12px 40px rgba(0,0,0,.5);
+  --c1-bg:#1C2E44; --c1-fg:#9CC3EE; --c2-bg:#3A2E19; --c2-fg:#E6C27F; --c3-bg:#17332E; --c3-fg:#8ED3C4;
+  --c4-bg:#3D2028; --c4-fg:#EFA2B4; --c5-bg:#2B2440; --c5-fg:#C4B3F0; --c6-bg:#2E3218; --c6-fg:#C9D48C;
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
@@ -32,6 +36,8 @@
   --line:#2C352F; --accent:#DE93C4; --accent-ink:#1E1219; --accent-soft:#3A2333;
   --moss:#92C59F; --moss-soft:#1F3226; --clay:#E0B17F; --clay-soft:#3A2C1D;
   --shadow:0 12px 40px rgba(0,0,0,.5);
+  --c1-bg:#1C2E44; --c1-fg:#9CC3EE; --c2-bg:#3A2E19; --c2-fg:#E6C27F; --c3-bg:#17332E; --c3-fg:#8ED3C4;
+  --c4-bg:#3D2028; --c4-fg:#EFA2B4; --c5-bg:#2B2440; --c5-fg:#C4B3F0; --c6-bg:#2E3218; --c6-fg:#C9D48C;
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding:0 16px}
@@ -91,7 +97,7 @@ td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
 td.img-cell{padding:6px 0 6px 10px;width:58px}
 th.img-cell{width:58px}
 .thumb{display:block;width:48px;height:60px;border-radius:6px;object-fit:cover;background:var(--sunk)}
-.hero{display:block;width:100%;height:min(360px,48vh);object-fit:contain;background:var(--sunk);border-radius:10px}
+.hero{display:block;width:100%;height:auto;flex-shrink:0;background:var(--sunk);border-radius:10px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 tbody tr{cursor:pointer}
 tbody tr:hover td{background:var(--sunk)}
@@ -102,6 +108,10 @@ td .line2{display:block;color:var(--muted);font-size:12.5px}
 .pill{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:99px}
 .pill.yes{background:var(--moss-soft);color:var(--moss)}
 .pill.no{background:var(--sunk);color:var(--muted)}
+.pill.c1{background:var(--c1-bg);color:var(--c1-fg)} .pill.c2{background:var(--c2-bg);color:var(--c2-fg)}
+.pill.c3{background:var(--c3-bg);color:var(--c3-fg)} .pill.c4{background:var(--c4-bg);color:var(--c4-fg)}
+.pill.c5{background:var(--c5-bg);color:var(--c5-fg)} .pill.c6{background:var(--c6-bg);color:var(--c6-fg)}
+.pill.chip-col{white-space:nowrap}
 .num{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border-radius:6px;background:var(--clay-soft);color:var(--clay);font:500 12px var(--mono)}
 .dash{color:var(--faint)}
 .empty{padding:48px 20px;text-align:center;color:var(--muted)}
@@ -217,6 +227,15 @@ const thumb = (r, cls) => IMGS[r.i]
   : h('span', { class: cls, 'aria-hidden': 'true' });
 const colIdx = name => META.findIndex(m => m.name.toLowerCase() === name);
 
+// Columns shown as colour-coded chips. Each distinct value gets its own colour, in alphabetical order.
+const CHIP_COLS = ['where from'];
+const chipColour = new Map();
+META.filter(m => CHIP_COLS.includes(m.name.toLowerCase())).forEach(m => {
+  const vals = [...new Set(ROWS.map(r => r.v[m.c]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  chipColour.set(m.c, new Map(vals.map((v, k) => [v, 'c' + (k % 6 + 1)])));
+});
+const chip = (c, v) => h('span', { class: 'pill chip-col ' + (chipColour.get(c)?.get(v) || 'no') }, v);
+
 const state = { q: '', sort: { c: 0, dir: 1 }, sel: new Map(), view: [] };
 
 const h = (tag, attrs = {}, ...kids) => {
@@ -315,6 +334,7 @@ const renderHead = () => {
 
 const cell = (m, v, first) => {
   if (!v) return h('span', { class: 'dash' }, '—');
+  if (chipColour.has(m.c)) return chip(m.c, v);
   if (m.kind === 'bool') return h('span', { class: 'pill ' + v.toLowerCase() }, v);
   if (m.kind === 'number') return h('span', { class: 'num' }, v);
   if (m.kind === 'money') return h('span', { class: 'mono' }, v);
@@ -440,7 +460,7 @@ function openDetail(idx) {
       h('dt', {}, m.name),
       h('dd', {}, !r.v[m.c] ? h('span', { class: 'dash' }, '—')
         : m.kind === 'url' ? h('a', { href: r.v[m.c], target: '_blank', rel: 'noopener' }, r.v[m.c])
-        : m.kind === 'text' ? r.v[m.c] : cell(m, r.v[m.c]))
+        : m.kind === 'text' && !chipColour.has(m.c) ? r.v[m.c] : cell(m, r.v[m.c]))
     ])),
     sibs.length ? h('div', { class: 'siblings' },
       h('h3', { class: 'eyebrow' }, `Other ${r.v[0]} entries (${sibs.length})`),
@@ -450,7 +470,7 @@ function openDetail(idx) {
         openDetail(j);
       }}, HAS_IMG ? thumb(o, 'sib-thumb') : h('span'),
          h('span', {}, (DESC >= 0 ? o.v[DESC].split('\n')[0] : '') || '—'),
-         h('span', { class: 'from' }, FROM >= 0 ? o.v[FROM] : '')))) : null
+         h('span', { class: 'from' }, FROM >= 0 && o.v[FROM] ? (chipColour.has(FROM) ? chip(FROM, o.v[FROM]) : o.v[FROM]) : '')))) : null
   );
   scrim.hidden = false;
   close.focus();
