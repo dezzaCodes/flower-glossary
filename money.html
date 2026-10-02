@@ -235,17 +235,18 @@ const TITLES = { income: 'Income', expense: 'Expenses' };
 // Every entry belongs to one business. Entries saved before categories existed are flowers.
 const CATS = { flowers: 'Flowers', juju: 'Juju' };
 const catOf = e => e.category || 'flowers';
-// Which businesses are shown. Each can be switched on or off, but at least one always stays on.
+// Which businesses are shown. Each can be switched on or off independently; all are on until changed.
 const SHOWN_KEY = 'flower-ledger-shown';
-const shown = new Set((() => { try { return JSON.parse(localStorage.getItem(SHOWN_KEY)).filter(c => c in CATS); } catch { return []; } })());
-if (!shown.size) Object.keys(CATS).forEach(c => shown.add(c));
-// 'all' when every business is shown, otherwise the one that is.
-const viewOf = () => shown.size === Object.keys(CATS).length ? 'all' : [...shown][0];
+const shown = new Set((() => {
+  try { const v = JSON.parse(localStorage.getItem(SHOWN_KEY)); if (Array.isArray(v)) return v.filter(c => c in CATS); } catch {}
+  return Object.keys(CATS);
+})());
+const saveShown = () => { try { localStorage.setItem(SHOWN_KEY, JSON.stringify([...shown])); } catch {} };
+// The one business shown, or 'all' when several or none are, in which case new entries pick their business.
+const viewOf = () => shown.size === 1 ? [...shown][0] : 'all';
 const toggleCat = c => {
-  if (shown.has(c)) { if (shown.size === 1) return; shown.delete(c); } else shown.add(c);
-  editing = null;
-  try { localStorage.setItem(SHOWN_KEY, JSON.stringify([...shown])); } catch {}
-  render();
+  shown.has(c) ? shown.delete(c) : shown.add(c);
+  editing = null; saveShown(); render();
 };
 const catSelect = (value, label) => h('select', { class: 'field', name: 'category', 'aria-label': label },
   Object.entries(CATS).map(([k, name]) => h('option', { value: k, selected: k === value || null }, name)));
@@ -262,8 +263,7 @@ function render() {
   const all = current(), d = { entries: all.entries.filter(e => shown.has(catOf(e))) };
   const t = totals(d), net = t.income - t.expense;
   document.getElementById('toggles').replaceChildren(...Object.entries(CATS).map(([k, name]) =>
-    h('button', { class: 'tog ' + k, type: 'button', 'aria-pressed': String(shown.has(k)), onclick: () => toggleCat(k),
-      title: shown.has(k) && shown.size === 1 ? 'At least one stays on' : null }, name)));
+    h('button', { class: 'tog ' + k, type: 'button', 'aria-pressed': String(shown.has(k)), onclick: () => toggleCat(k) }, name)));
   document.getElementById('tiles').replaceChildren(
     h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Income'), h('span', { class: 'v' }, fmt(t.income))),
     h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Expenses'), h('span', { class: 'v' }, fmt(t.expense))),
@@ -280,7 +280,8 @@ function renderLedger(d, type, total) {
     onclick: () => startEdit(e.id),
     onkeydown: ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); startEdit(e.id); } } },
     h('td', {}, e.desc, view === 'all' ? h('span', { class: 'cat ' + catOf(e) }, CATS[catOf(e)]) : null), h('td', { class: 'amt' }, fmt(e.cents))));
-  if (!list.length) rows.push(h('tr', { class: 'empty' }, h('td', { colspan: 2 }, `No ${TITLES[type].toLowerCase()} yet.`)));
+  if (!list.length) rows.push(h('tr', { class: 'empty' }, h('td', { colspan: 2 },
+    shown.size ? `No ${TITLES[type].toLowerCase()} yet.` : 'Tick Flowers or Juju above to see entries.')));
 
   const desc = h('input', { class: 'field', name: 'desc', placeholder: type === 'income' ? 'What sold' : 'What it was for', 'aria-label': 'Description', required: true, autocomplete: 'off' });
   const amt = h('input', { class: 'field amount', name: 'amount', placeholder: '0.00', inputmode: 'decimal', 'aria-label': 'Amount', required: true, autocomplete: 'off' });
@@ -291,6 +292,8 @@ function renderLedger(d, type, total) {
     if (!text) return desc.focus();
     if (cents == null) { amt.setCustomValidity('Enter an amount, e.g. 120.50'); amt.reportValidity(); return; }
     const entry = { id: newId(), type, category: cat ? cat.value : view, desc: text, cents, added: new Date().toLocaleDateString('en-CA') };
+    // Show the business the entry went into, so it doesn't vanish on adding.
+    if (!shown.has(entry.category)) { shown.add(entry.category); saveShown(); }
     change(d => d.entries.push(entry), `Add ${type}: ${text}`);
     document.querySelector(`#${type} input[name=desc]`).focus();
   }}, desc, amt, cat, h('button', { class: 'btn', type: 'submit' }, type === 'income' ? 'Add income' : 'Add expense'));
