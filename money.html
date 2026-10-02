@@ -78,11 +78,16 @@ td.amt{font:13.5px var(--mono);font-variant-numeric:tabular-nums;text-align:righ
 tbody tr.row{cursor:pointer}
 tbody tr.row:hover td{background:var(--sunk)}
 .empty td{color:var(--muted);text-align:center;padding:24px}
-form.entry{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;grid-auto-flow:dense;gap:8px;padding:10px;background:var(--sunk)}
+form.entry{display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:var(--sunk)}
+form.entry .field{flex:1 1 120px;width:auto}
+form.entry .field.desc{flex-basis:100%}
+form.entry .field.date{flex-basis:140px}
+form.entry .field.amount{flex-basis:90px}
+form.entry select.field{flex:0 1 auto}
+form.entry > .btn{flex:0 0 auto}
 tr.editing td{padding:0;background:var(--sunk)}
-tr.editing form.entry{grid-template-columns:minmax(0,1fr) 110px auto;}
-form.entry.with-cat{grid-template-columns:minmax(0,1fr) 110px auto auto}
-tr.editing .actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+tr.editing .actions{flex:1 1 100%;display:flex;gap:8px;justify-content:flex-end}
+td .when{display:block;font-size:12.5px;color:var(--muted)}
 tr.editing .actions .del{margin-right:auto;color:var(--loss)}
 .field{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
 .field.amount{font-family:var(--mono);text-align:right}
@@ -104,10 +109,7 @@ tr.editing .actions .del{margin-right:auto;color:var(--loss)}
   .tiles{grid-template-columns:1fr 1fr;gap:8px}
   .tile{padding:12px 14px}
   .tile.result{grid-column:1/-1}
-  form.entry,form.entry.with-cat,tr.editing form.entry{grid-template-columns:minmax(0,1fr) 92px}
-  form.entry select.field{grid-column:1/-1;width:100%}
-  form.entry .btn{grid-column:1/-1}
-  tr.editing .actions .btn{grid-column:auto}
+  form.entry > .btn{flex:1 1 100%}
   .connect form{flex-direction:column}
 }
 </style>
@@ -176,6 +178,9 @@ const parseAmount = s => {
   const n = Number(String(s).replace(/[$,\s]/g, ''));
   return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
 };
+const today = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+const dateOf = e => e.date || e.added || '';
+const fmtDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No date';
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 // ---------- GitHub storage ----------
@@ -275,28 +280,31 @@ function render() {
 
 function renderLedger(d, type, total) {
   const view = viewOf();
-  const list = d.entries.filter(e => e.type === type);
+  // Most recent first; entries on the same day show the one added last first.
+  const list = d.entries.map((e, i) => [e, i]).filter(([e]) => e.type === type)
+    .sort(([a, i], [b, j]) => dateOf(b).localeCompare(dateOf(a)) || j - i).map(([e]) => e);
   const rows = list.map(e => e.id === editing ? editRow(e) : h('tr', { class: 'row', tabindex: 0, title: 'Edit',
     onclick: () => startEdit(e.id),
     onkeydown: ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); startEdit(e.id); } } },
-    h('td', {}, e.desc, view === 'all' ? h('span', { class: 'cat ' + catOf(e) }, CATS[catOf(e)]) : null), h('td', { class: 'amt' }, fmt(e.cents))));
+    h('td', {}, e.desc, view === 'all' ? h('span', { class: 'cat ' + catOf(e) }, CATS[catOf(e)]) : null, h('span', { class: 'when' }, fmtDate(dateOf(e)))), h('td', { class: 'amt' }, fmt(e.cents))));
   if (!list.length) rows.push(h('tr', { class: 'empty' }, h('td', { colspan: 2 },
     shown.size ? `No ${TITLES[type].toLowerCase()} yet.` : 'Tick Flowers or Juju above to see entries.')));
 
-  const desc = h('input', { class: 'field', name: 'desc', placeholder: type === 'income' ? 'What sold' : 'What it was for', 'aria-label': 'Description', required: true, autocomplete: 'off' });
+  const desc = h('input', { class: 'field desc', name: 'desc', placeholder: type === 'income' ? 'What sold' : 'What it was for', 'aria-label': 'Description', required: true, autocomplete: 'off' });
   const amt = h('input', { class: 'field amount', name: 'amount', placeholder: '0.00', inputmode: 'decimal', 'aria-label': 'Amount', required: true, autocomplete: 'off' });
+  const date = h('input', { class: 'field date', name: 'date', type: 'date', value: today(), 'aria-label': 'Date', required: true });
   const cat = view === 'all' ? catSelect('flowers', 'Business') : null;
-  const add = h('form', { class: 'entry' + (cat ? ' with-cat' : ''), onsubmit: ev => {
+  const add = h('form', { class: 'entry', onsubmit: ev => {
     ev.preventDefault();
     const cents = parseAmount(amt.value), text = desc.value.trim();
     if (!text) return desc.focus();
     if (cents == null) { amt.setCustomValidity('Enter an amount, e.g. 120.50'); amt.reportValidity(); return; }
-    const entry = { id: newId(), type, category: cat ? cat.value : view, desc: text, cents, added: new Date().toLocaleDateString('en-CA') };
+    const entry = { id: newId(), type, category: cat ? cat.value : view, desc: text, cents, date: date.value || today() };
     // Show the business the entry went into, so it doesn't vanish on adding.
     if (!shown.has(entry.category)) { shown.add(entry.category); saveShown(); }
     change(d => d.entries.push(entry), `Add ${type}: ${text}`);
     document.querySelector(`#${type} input[name=desc]`).focus();
-  }}, desc, amt, cat, h('button', { class: 'btn', type: 'submit' }, type === 'income' ? 'Add income' : 'Add expense'));
+  }}, desc, date, amt, cat, h('button', { class: 'btn', type: 'submit' }, type === 'income' ? 'Add income' : 'Add expense'));
   amt.addEventListener('input', () => amt.setCustomValidity(''));
 
   document.getElementById(type).replaceChildren(
@@ -305,9 +313,10 @@ function renderLedger(d, type, total) {
 }
 
 function editRow(e) {
-  const desc = h('input', { class: 'field', value: e.desc, 'aria-label': 'Description', required: true, autocomplete: 'off' });
+  const desc = h('input', { class: 'field desc', value: e.desc, 'aria-label': 'Description', required: true, autocomplete: 'off' });
   const amt = h('input', { class: 'field amount', value: (e.cents / 100).toFixed(2), inputmode: 'decimal', 'aria-label': 'Amount', required: true, autocomplete: 'off' });
   amt.addEventListener('input', () => amt.setCustomValidity(''));
+  const date = h('input', { class: 'field date', type: 'date', value: dateOf(e) || today(), 'aria-label': 'Date', required: true });
   const cat = catSelect(catOf(e), 'Business');
   const form = h('form', { class: 'entry',
     onkeydown: ev => { if (ev.key === 'Escape') { editing = null; render(); } },
@@ -317,10 +326,11 @@ function editRow(e) {
       if (!text) return desc.focus();
       if (cents == null) { amt.setCustomValidity('Enter an amount, e.g. 120.50'); amt.reportValidity(); return; }
       editing = null;
-      if (text === e.desc && cents === e.cents && cat.value === catOf(e)) return render();
-      change(d => { const x = d.entries.find(y => y.id === e.id); if (x) Object.assign(x, { desc: text, cents, category: cat.value }); }, `Edit ${e.type}: ${text}`);
+      const day = date.value || dateOf(e) || today();
+      if (text === e.desc && cents === e.cents && cat.value === catOf(e) && day === dateOf(e)) return render();
+      change(d => { const x = d.entries.find(y => y.id === e.id); if (x) { Object.assign(x, { desc: text, cents, category: cat.value, date: day }); delete x.added; } }, `Edit ${e.type}: ${text}`);
     } },
-    desc, amt, cat,
+    desc, date, amt, cat,
     h('div', { class: 'actions' },
       h('button', { class: 'btn quiet del', type: 'button', onclick: () => {
         if (!confirm(`Delete “${e.desc}” (${fmt(e.cents)})?`)) return;
