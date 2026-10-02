@@ -64,6 +64,7 @@ details.facet summary::after{content:"";width:7px;height:7px;border-right:1.5px 
 details.facet[open] summary::after{transform:rotate(-135deg);margin-top:4px}
 details.facet summary > .name{flex:1}
 .facet .clear{font-weight:400}
+.facet .clear:disabled{color:var(--faint);cursor:default;text-decoration:none}
 .facet .n-sel{font:500 11px var(--body);background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:1px 7px}
 .facet-search{width:100%;font:inherit;font-size:13px;margin:8px 0 4px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .opts{max-height:232px;overflow:auto;margin-top:6px;display:flex;flex-direction:column;gap:1px}
@@ -307,7 +308,7 @@ for (const m of FACETED) {
     list.append(label);
   }
   const nSel = h('span', { class: 'n-sel', hidden: true });
-  const clear = h('button', { class: 'linkbtn clear', type: 'button', hidden: true, 'aria-label': `Clear ${m.name} filter`,
+  const clear = h('button', { class: 'linkbtn clear', type: 'button', disabled: true, 'aria-label': `Clear ${m.name} filter`,
     onclick: e => { e.preventDefault(); e.stopPropagation(); state.sel.delete(m.c); update(); } }, 'Clear');
   const summary = h('summary', {}, h('span', { class: 'name' }, m.name), nSel, clear);
   const kids = [summary];
@@ -333,7 +334,7 @@ const updateFacets = () => {
       it.cb.checked = sel.has(t);
       it.label.classList.toggle('zero', !n && !sel.has(t));
     });
-    nSel.hidden = clear.hidden = !sel.size; nSel.textContent = sel.size;
+    nSel.hidden = clear.disabled = !sel.size; nSel.textContent = sel.size;
   }
 };
 
