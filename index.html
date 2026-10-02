@@ -307,7 +307,7 @@ for (const m of FACETED) {
   const nSel = h('span', { class: 'n-sel', hidden: true });
   const summary = h('summary', {}, h('span', {}, m.name), nSel);
   const kids = [summary];
-  if (toks.length > 10) {
+  if (toks.length > 10 && m.kind !== 'money') { // prices are a short sorted list, so no search box
     kids.push(h('input', { class: 'facet-search', type: 'search', id: `fs-${m.c}`, placeholder: `Find a ${m.name.toLowerCase()}…`, 'aria-label': `Find a ${m.name.toLowerCase()}`,
       oninput: e => { const s = e.target.value.trim().toLowerCase(); items.forEach(it => it.label.hidden = !!s && !it.text.includes(s)); } }));
   }
