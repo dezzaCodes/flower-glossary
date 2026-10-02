@@ -119,6 +119,7 @@ td .line2{display:block;color:var(--muted);font-size:12.5px}
 .pill{display:inline-block;font-size:12px;font-weight:600;padding:1px 9px;border-radius:99px}
 .pill.yes{background:var(--moss-soft);color:var(--moss)}
 .pill.no{background:var(--sunk);color:var(--muted)}
+.phone-only{display:none}
 .pill.c1{background:var(--c1-bg);color:var(--c1-fg)} .pill.c2{background:var(--c2-bg);color:var(--c2-fg)}
 .pill.c3{background:var(--c3-bg);color:var(--c3-fg)} .pill.c4{background:var(--c4-bg);color:var(--c4-fg)}
 .pill.c5{background:var(--c5-bg);color:var(--c5-fg)} .pill.c6{background:var(--c6-bg);color:var(--c6-fg)}
@@ -201,6 +202,9 @@ dl.fields dd{white-space:pre-line}
   td[data-label]{display:inline-flex;align-items:center;gap:4px}
   td[data-label]::before{content:attr(data-label);font-size:12px;color:var(--muted)}
   td.nil[data-label]{display:none}
+  td[data-bool="no"]{display:none}
+  .wide-only{display:none}
+  .phone-only{display:inline-block}
 }
 </style>
 </head>
@@ -423,7 +427,8 @@ const cell = (m, v, first) => {
   if (first) return nameParts(v);
   if (chipColour.has(m.c)) return chip(m.c, v);
   if (swatchCols.has(m.c)) return h('span', { class: 'swatches' }, splitCell(m.name, v).map(t => h('span', { class: 'pill swatch-pill' }, swatch(t), t)));
-  if (m.kind === 'bool') return h('span', { class: 'pill ' + v.toLowerCase() }, v);
+  if (m.kind === 'bool') return [h('span', { class: 'pill wide-only ' + v.toLowerCase() }, v),
+    /^yes$/i.test(v) ? h('span', { class: 'pill phone-only yes' }, m.name) : null];
   if (m.kind === 'number') return h('span', { class: 'num' }, v);
   if (m.kind === 'money') return h('span', { class: 'mono' }, v);
   if (m.kind === 'url') return h('a', { href: v, target: '_blank', rel: 'noopener', onclick: e => e.stopPropagation() }, 'Open ↗');
@@ -440,7 +445,8 @@ const renderBody = () => {
     SHOWN.map((m, k) => h('td', {
       class: [k === 0 ? 'first' : '', !r.v[m.c] || (m.kind === 'number' && Number(r.v[m.c]) === 0) ? 'nil' : ''].join(' ').trim() || null,
       'data-col': m.name.toLowerCase(),
-      'data-label': m.kind === 'bool' || m.kind === 'number' ? m.name : null,
+      'data-label': m.kind === 'number' ? m.name : null,
+      'data-bool': m.kind === 'bool' ? (/^yes$/i.test(r.v[m.c]) ? 'yes' : 'no') : null,
     }, cell(m, r.v[m.c], k === 0))))));
   document.getElementById('empty').hidden = state.view.length > 0;
 };
@@ -557,6 +563,7 @@ function openDetail(idx) {
       h('dt', {}, m.name),
       h('dd', {}, !r.v[m.c] ? h('span', { class: 'dash' }, '—')
         : m.kind === 'url' ? h('a', { href: r.v[m.c], target: '_blank', rel: 'noopener' }, r.v[m.c])
+        : m.kind === 'bool' ? h('span', { class: 'pill ' + r.v[m.c].toLowerCase() }, r.v[m.c])
         : m.kind === 'text' && !chipColour.has(m.c) && !swatchCols.has(m.c) ? r.v[m.c] : cell(m, r.v[m.c]))
     ])),
     sibs.length ? h('div', { class: 'siblings' },
