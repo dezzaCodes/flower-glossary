@@ -55,10 +55,15 @@ input:focus-visible,button:focus-visible,tr:focus-visible{outline:2px solid var(
 .tile.result.loss .v,.tile.result.loss .eyebrow{color:var(--loss)}
 
 .show{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
-.seg{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:99px;padding:3px}
-.seg button{font:500 14px var(--body);border:0;background:none;color:var(--muted);padding:5px 14px;border-radius:99px;cursor:pointer}
-.seg button:hover{color:var(--ink)}
-.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.toggles{display:inline-flex;gap:8px}
+.tog{display:inline-flex;align-items:center;gap:6px;font:500 14px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:5px 14px 5px 10px;border-radius:99px;cursor:pointer}
+.tog::before{content:"";width:14px;height:14px;border-radius:4px;border:1.5px solid currentColor;box-sizing:border-box}
+.tog:hover{color:var(--ink)}
+.tog[aria-pressed="true"]::before{content:"✓";display:grid;place-items:center;font-size:11px;font-weight:600;line-height:1;border:0;color:var(--surface)}
+.tog.flowers[aria-pressed="true"]::before{background:var(--accent)}
+.tog.juju[aria-pressed="true"]::before{background:var(--clay)}
+.tog.flowers[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tog.juju[aria-pressed="true"]{background:var(--clay-soft);border-color:var(--clay);color:var(--clay)}
 .cat{display:inline-block;margin-left:8px;font-size:11.5px;font-weight:600;padding:0 8px;border-radius:99px;vertical-align:1px}
 .cat.flowers{background:var(--accent-soft);color:var(--accent)}
 .cat.juju{background:var(--clay-soft);color:var(--clay)}
@@ -133,7 +138,7 @@ tr.editing .actions .del{margin-right:auto;color:var(--loss)}
   </section>
 
   <div id="app" hidden>
-    <div class="show"><span class="eyebrow">Show</span><div class="seg" id="seg" role="group" aria-label="Show"></div></div>
+    <div class="show"><span class="eyebrow">Show</span><div class="toggles" id="toggles" role="group" aria-label="Show"></div></div>
     <div class="tiles" id="tiles"></div>
     <div class="cols">
       <section class="ledger" id="income"></section>
@@ -230,9 +235,18 @@ const TITLES = { income: 'Income', expense: 'Expenses' };
 // Every entry belongs to one business. Entries saved before categories existed are flowers.
 const CATS = { flowers: 'Flowers', juju: 'Juju' };
 const catOf = e => e.category || 'flowers';
-const VIEW_KEY = 'flower-ledger-view';
-let view = (() => { try { const v = localStorage.getItem(VIEW_KEY); return v in CATS ? v : 'all'; } catch { return 'all'; } })();
-const setView = v => { view = v; editing = null; try { localStorage.setItem(VIEW_KEY, v); } catch {} render(); };
+// Which businesses are shown. Each can be switched on or off, but at least one always stays on.
+const SHOWN_KEY = 'flower-ledger-shown';
+const shown = new Set((() => { try { return JSON.parse(localStorage.getItem(SHOWN_KEY)).filter(c => c in CATS); } catch { return []; } })());
+if (!shown.size) Object.keys(CATS).forEach(c => shown.add(c));
+// 'all' when every business is shown, otherwise the one that is.
+const viewOf = () => shown.size === Object.keys(CATS).length ? 'all' : [...shown][0];
+const toggleCat = c => {
+  if (shown.has(c)) { if (shown.size === 1) return; shown.delete(c); } else shown.add(c);
+  editing = null;
+  try { localStorage.setItem(SHOWN_KEY, JSON.stringify([...shown])); } catch {}
+  render();
+};
 const catSelect = (value, label) => h('select', { class: 'field', name: 'category', 'aria-label': label },
   Object.entries(CATS).map(([k, name]) => h('option', { value: k, selected: k === value || null }, name)));
 const totals = d => {
@@ -245,10 +259,11 @@ let editing = null; // id of the entry being edited
 
 function render() {
   renderStatus();
-  const all = current(), d = { entries: all.entries.filter(e => view === 'all' || catOf(e) === view) };
+  const all = current(), d = { entries: all.entries.filter(e => shown.has(catOf(e))) };
   const t = totals(d), net = t.income - t.expense;
-  document.getElementById('seg').replaceChildren(...[['all', 'Both'], ...Object.entries(CATS)].map(([k, name]) =>
-    h('button', { type: 'button', 'aria-pressed': String(view === k), onclick: () => setView(k) }, name)));
+  document.getElementById('toggles').replaceChildren(...Object.entries(CATS).map(([k, name]) =>
+    h('button', { class: 'tog ' + k, type: 'button', 'aria-pressed': String(shown.has(k)), onclick: () => toggleCat(k),
+      title: shown.has(k) && shown.size === 1 ? 'At least one stays on' : null }, name)));
   document.getElementById('tiles').replaceChildren(
     h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Income'), h('span', { class: 'v' }, fmt(t.income))),
     h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Expenses'), h('span', { class: 'v' }, fmt(t.expense))),
@@ -259,6 +274,7 @@ function render() {
 }
 
 function renderLedger(d, type, total) {
+  const view = viewOf();
   const list = d.entries.filter(e => e.type === type);
   const rows = list.map(e => e.id === editing ? editRow(e) : h('tr', { class: 'row', tabindex: 0, title: 'Edit',
     onclick: () => startEdit(e.id),
