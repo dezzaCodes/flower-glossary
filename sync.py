@@ -76,6 +76,7 @@ def main(page="index.html", out_dir="."):
         "columns": cols,
         "rows": [r + [""] * (len(cols) - len(r)) for _, r in kept],
         "images": len(images),
+        "sheet": SHEET + "/edit?usp=sharing",
     }
     blob = json.dumps(data, ensure_ascii=False).replace("<", "\\u003c")
     html = open(page, encoding="utf-8").read()
