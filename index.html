@@ -269,9 +269,9 @@ const h = (tag, attrs = {}, ...kids) => {
 const synced = DATA.synced ? new Date(DATA.synced) : null;
 document.getElementById('sub').append(
   h('b', {}, ROWS.length), ' flowers',
-  synced ? ` · synced ${synced.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '',
-  ...(DATA.sheet ? [' · ', h('a', { href: DATA.sheet, target: '_blank', rel: 'noopener' },
-    DATA.sheetTitle ? `From the “${DATA.sheetTitle}” Google Sheet ↗` : 'From the Google Sheet ↗')] : [])
+  synced ? ` · synced ${synced.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}` : '',
+  ...(DATA.sheet ? [synced ? ' from ' : ' · From ', h('a', { href: DATA.sheet, target: '_blank', rel: 'noopener' },
+    DATA.sheetTitle || 'the Google Sheet')] : [])
 );
 
 // ---------- filtering ----------
