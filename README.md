@@ -1,6 +1,6 @@
 # Flower Inventory
 
-**Live site: https://dezzacodes.github.io/flower-glossary/**
+**Live site: https://dezzacodes.github.io/flower-inventory/**
 
 A sortable, filterable page of every flower in the inventory spreadsheet, with photos.
 
