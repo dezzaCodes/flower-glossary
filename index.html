@@ -56,10 +56,11 @@ input:focus-visible,button:focus-visible,tr:focus-visible,summary:focus-visible{
 
 .layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;align-items:start}
 aside.filters{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px);overflow:auto;padding-right:4px}
-.filters-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.filters-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px;min-height:28px}
 .filters-head .eyebrow{margin-right:auto}
 .phone-flex,.phone-block{display:none}
-.close-filters{width:30px;height:30px;font-size:18px;align-self:center}
+.close-filters{place-items:center;border:0;background:none;padding:0 2px;font:400 20px/16px var(--body);color:var(--muted);cursor:pointer}
+.close-filters:hover{color:var(--ink);background:none}
 .filters-done{position:sticky;bottom:0;margin:10px -14px -10px;padding:10px 14px calc(env(safe-area-inset-bottom,0px) + 10px);background:var(--surface);border-top:1px solid var(--line);border-radius:0 0 12px 12px}
 .done-btn{width:100%;font:600 15px var(--body);padding:12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
@@ -235,7 +236,7 @@ dl.fields dd{white-space:pre-line}
 
   <div class="layout">
     <aside class="filters" id="filters" aria-label="Filters">
-      <div class="filters-head"><span class="eyebrow">Filter by column</span><button class="linkbtn" id="clearAll" hidden>Clear all</button><button class="iconbtn close-filters phone-flex" id="closeFilters" type="button" aria-label="Close filters">×</button></div>
+      <div class="filters-head"><span class="eyebrow">Filter by column</span><button class="linkbtn" id="clearAll" hidden>Clear all</button><button class="close-filters phone-flex" id="closeFilters" type="button" aria-label="Close filters">×</button></div>
       <div id="facets"></div>
       <div class="filters-done phone-block"><button class="done-btn" id="doneFilters" type="button">Show flowers</button></div>
     </aside>
@@ -522,8 +523,8 @@ const renderBar = () => {
   }
   const n = nActive();
   fill(bar,
-    h('button', { class: 'chip show-filters', type: 'button', 'aria-expanded': String(filtersEl.classList.contains('open')),
-      onclick: () => { filtersEl.classList.toggle('open'); renderBar(); } }, filtersEl.classList.contains('open') ? 'Hide filters' : `Filters${n ? ` (${n})` : ''}`),
+    filtersEl.classList.contains('open') ? null : h('button', { class: 'chip show-filters', type: 'button', 'aria-expanded': 'false',
+      onclick: () => { filtersEl.classList.add('open'); renderBar(); } }, `Filters${n ? ` (${n})` : ''}`),
     h('label', { class: 'mobile-sort' }, 'Sort by ',
       h('select', { id: 'sortSel', onchange: e => { const [c, dir] = e.target.value.split(':').map(Number); state.sort = { c, dir }; update(); } },
         SHOWN.filter(m => !PHONE_NO_SORT.includes(m.name.toLowerCase()) || state.sort.c === m.c).flatMap(m => [1, -1].map(dir => h('option', { value: `${m.c}:${dir}`, selected: state.sort.c === m.c && state.sort.dir === dir || null },
