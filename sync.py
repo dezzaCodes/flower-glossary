@@ -1,4 +1,4 @@
-"""Refresh the Flower Glossary page data from its Google Sheet.
+"""Refresh the Flower Inventory page data from its Google Sheet.
 
 Usage: SHEET_ID=... python3 sync.py
 Replaces the contents of <script type="application/json" id="flower-data"> in index.html

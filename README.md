@@ -1,8 +1,8 @@
-# Flower Glossary
+# Flower Inventory
 
 **Live site: https://dezzacodes.github.io/flower-glossary/**
 
-A sortable, filterable page of every flower in the glossary spreadsheet, with photos.
+A sortable, filterable page of every flower in the inventory spreadsheet, with photos.
 
 - `index.html` is the whole site. Its data sits in the `flower-data` JSON block.
 - `images.json` holds the photos, resized to 360px WebP.
