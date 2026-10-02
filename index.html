@@ -220,7 +220,11 @@ const kindOf = c => {
   return 'text';
 };
 const META = COLS.map((name, c) => ({ name, c, kind: kindOf(c) }));
-const SHOWN = META.filter(m => m.kind !== 'empty');
+// Column order for the table, filters and detail panel; columns not listed follow in sheet order.
+const ORDER = ['flower', 'colour', 'description', 'where from', 'native', 'price', 'excess'];
+const rank = m => { const k = ORDER.indexOf(m.name.toLowerCase()); return k < 0 ? ORDER.length + m.c : k; };
+const ORDERED = [...META].sort((a, b) => rank(a) - rank(b));
+const SHOWN = ORDERED.filter(m => m.kind !== 'empty');
 // Columns that get no filter list in the sidebar; search still covers them.
 const NO_FILTER = ['description'];
 const FACETED = SHOWN.filter(m => m.kind !== 'url' && !NO_FILTER.includes(m.name.toLowerCase()));
@@ -478,7 +482,7 @@ function openDetail(idx) {
       close),
     HAS_IMG && IMGS[r.i] ? h('img', { class: 'hero', src: IMGS[r.i], alt: '' }) : null,
     h('h2', { id: 'sheetTitle' }, r.v[0] || '(untitled)'),
-    h('dl', { class: 'fields' }, META.slice(1).filter(m => m.kind !== 'empty' && m.name.toLowerCase() !== 'image').flatMap(m => [
+    h('dl', { class: 'fields' }, ORDERED.filter(m => m.c !== 0 && m.kind !== 'empty' && m.name.toLowerCase() !== 'image').flatMap(m => [
       h('dt', {}, m.name),
       h('dd', {}, !r.v[m.c] ? h('span', { class: 'dash' }, '—')
         : m.kind === 'url' ? h('a', { href: r.v[m.c], target: '_blank', rel: 'noopener' }, r.v[m.c])
