@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<title>Flower Money</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F6F1; --surface:#FFFFFF; --sunk:#EBEFE7; --ink:#1E2620; --muted:#5D6A61; --faint:#8A968D;
+  --line:#DCE2D8; --accent:#7B2E63; --accent-ink:#FFFFFF; --accent-soft:#F3E5EE;
+  --moss:#3D6A48; --moss-soft:#E2EEE4; --loss:#8A2F45; --loss-soft:#F7E1E6;
+  --display:"Young Serif",Georgia,"Times New Roman",serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#121613; --surface:#1A201C; --sunk:#151A16; --ink:#E7ECE5; --muted:#A0ACA3; --faint:#76827A;
+  --line:#2C352F; --accent:#DE93C4; --accent-ink:#1E1219; --accent-soft:#3A2333;
+  --moss:#92C59F; --moss-soft:#1F3226; --loss:#EFA2B4; --loss-soft:#3D2028;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121613; --surface:#1A201C; --sunk:#151A16; --ink:#E7ECE5; --muted:#A0ACA3; --faint:#76827A;
+  --line:#2C352F; --accent:#DE93C4; --accent-ink:#1E1219; --accent-soft:#3A2333;
+  --moss:#92C59F; --moss-soft:#1F3226; --loss:#EFA2B4; --loss-soft:#3D2028;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding:0 16px}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 48px}
+header.top{margin-bottom:22px}
+h1{font:400 clamp(30px,5vw,44px)/1.05 var(--display);margin:0;letter-spacing:-.01em}
+.title-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.nav{font-size:14px;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:4px 12px;background:var(--surface)}
+.nav:hover{background:var(--sunk)}
+.sub{color:var(--muted);margin:6px 0 0;font-size:14px}
+.sub.err{color:var(--loss)}
+a{color:var(--accent)}
+.linkbtn{background:none;border:0;padding:0;font:inherit;color:var(--accent);cursor:pointer}
+.linkbtn:hover{text-decoration:underline}
+input:focus-visible,button:focus-visible,tr:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:24px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+.tile .v{display:block;font:500 clamp(20px,3.4vw,28px)/1.2 var(--mono);font-variant-numeric:tabular-nums;margin-top:4px;white-space:nowrap}
+.tile.result.profit{background:var(--moss-soft);border-color:transparent}
+.tile.result.profit .v,.tile.result.profit .eyebrow{color:var(--moss)}
+.tile.result.loss{background:var(--loss-soft);border-color:transparent}
+.tile.result.loss .v,.tile.result.loss .eyebrow{color:var(--loss)}
+
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.ledger h2{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font:400 24px/1.2 var(--display);margin:0 0 10px}
+.ledger h2 small{font:500 14px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.amt{font:13.5px var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;width:1%}
+tbody tr.row{cursor:pointer}
+tbody tr.row:hover td{background:var(--sunk)}
+.empty td{color:var(--muted);text-align:center;padding:24px}
+form.entry{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;padding:10px;background:var(--sunk)}
+tr.editing td{padding:0;background:var(--sunk)}
+tr.editing form.entry{grid-template-columns:minmax(0,1fr) 110px;}
+tr.editing .actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+tr.editing .actions .del{margin-right:auto;color:var(--loss)}
+.field{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
+.field.amount{font-family:var(--mono);text-align:right}
+.btn{font:600 14px var(--body);padding:8px 14px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);cursor:pointer;white-space:nowrap}
+.btn.quiet{background:var(--surface);color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btn:disabled{opacity:.5;cursor:default}
+
+.connect{max-width:560px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.connect h2{font:400 24px var(--display);margin:0 0 8px}
+.connect ol{padding-left:20px;margin:10px 0 16px}
+.connect li{margin-bottom:4px}
+.connect form{display:flex;gap:8px}
+
+@media (max-width:760px){
+  .cols{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .wrap{padding-block:18px 32px}
+  .tiles{grid-template-columns:1fr 1fr;gap:8px}
+  .tile{padding:12px 14px}
+  .tile.result{grid-column:1/-1}
+  form.entry{grid-template-columns:minmax(0,1fr) 92px}
+  form.entry .btn{grid-column:1/-1}
+  tr.editing .actions .btn{grid-column:auto}
+  .connect form{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-row">
+      <h1>Money</h1>
+      <a class="nav" href="./">← Flowers</a>
+    </div>
+    <p class="sub" id="status">Loading…</p>
+  </header>
+
+  <section class="connect" id="connect" hidden>
+    <h2>Connect this device</h2>
+    <p>The figures are kept in the private GitHub repository <b>dezzaCodes/flower-ledger</b>, so only you can see them. Each device needs a GitHub token once:</p>
+    <ol>
+      <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">New fine-grained token</a>.</li>
+      <li>Under <b>Repository access</b>, choose <b>Only select repositories</b> and pick <b>flower-ledger</b>.</li>
+      <li>Under <b>Permissions → Repository permissions</b>, set <b>Contents</b> to <b>Read and write</b>.</li>
+      <li>Generate the token and paste it here.</li>
+    </ol>
+    <form id="connectForm">
+      <input class="field" id="token" type="password" placeholder="github_pat_…" autocomplete="off" aria-label="GitHub token" required>
+      <button class="btn" type="submit">Connect</button>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <div class="tiles" id="tiles"></div>
+    <div class="cols">
+      <section class="ledger" id="income"></section>
+      <section class="ledger" id="expense"></section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const REPO = 'dezzaCodes/flower-ledger', FILE = 'ledger.json';
+const API = `https://api.github.com/repos/${REPO}/contents/${FILE}`;
+const TOKEN_KEY = 'flower-ledger-token';
+const store = {
+  get: () => { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } },
+  set: v => { try { localStorage.setItem(TOKEN_KEY, v); } catch {} },
+  clear: () => { try { localStorage.removeItem(TOKEN_KEY); } catch {} },
+};
+
+const h = (tag, attrs = {}, ...kids) => {
+  const el = document.createElement(tag);
+  for (const [k, val] of Object.entries(attrs)) {
+    if (val == null || val === false) continue;
+    if (k === 'class') el.className = val;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), val);
+    else el.setAttribute(k, val === true ? '' : val);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid instanceof Node ? kid : String(kid));
+  return el;
+};
+
+const fmt = cents => (cents < 0 ? '−' : '') + '$' + (Math.abs(cents) / 100).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// "$1,234.5" -> 123450 cents; null if it isn't a positive amount.
+const parseAmount = s => {
+  const n = Number(String(s).replace(/[$,\s]/g, ''));
+  return Number.isFinite(n) && n > 0 ? Math.round(n * 100) : null;
+};
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+// ---------- GitHub storage ----------
+let token = store.get(), doc = null, sha = null;
+const fromB64 = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, '')), c => c.charCodeAt(0)));
+const toB64 = s => { let bin = ''; for (const byte of new TextEncoder().encode(s)) bin += String.fromCharCode(byte); return btoa(bin); };
+const gh = (method, body) => fetch(API, {
+  method, cache: 'no-store',
+  headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+  body: body ? JSON.stringify(body) : undefined,
+});
+
+async function load() {
+  const res = await gh('GET');
+  if (res.status === 401 || res.status === 403 || res.status === 404) throw Object.assign(new Error('auth'), { auth: true });
+  if (!res.ok) throw new Error(`GitHub said ${res.status}`);
+  const j = await res.json();
+  doc = JSON.parse(fromB64(j.content)); sha = j.sha;
+}
+
+// Changes save one at a time. Each change is a function applied to the saved ledger, so if the file was
+// changed on another device meanwhile, it is reloaded and the change applied again on top. Until a change
+// is saved, the page shows it applied to the saved copy.
+let queue = Promise.resolve();
+const unsaved = [];
+const current = () => { const d = structuredClone(doc); unsaved.forEach(fn => fn(d)); return d; };
+function change(fn, message) {
+  unsaved.push(fn); render();
+  queue = queue.then(async () => {
+    try {
+      for (let attempt = 0; ; attempt++) {
+        const next = structuredClone(doc); fn(next);
+        const res = await gh('PUT', { message, sha, content: toB64(JSON.stringify(next, null, 1) + '\n') });
+        if (res.ok) { sha = (await res.json()).content.sha; doc = next; break; }
+        if ((res.status === 409 || res.status === 422) && attempt < 2) { await load(); continue; }
+        throw new Error(`GitHub said ${res.status}`);
+      }
+      setStatus();
+    } catch (e) {
+      setStatus(`Couldn't save “${message}” (${e.message}). Reload to try again.`, true);
+    } finally { unsaved.splice(unsaved.indexOf(fn), 1); render(); }
+  });
+}
+
+// ---------- rendering ----------
+const statusEl = document.getElementById('status');
+let statusMsg = null;
+function setStatus(msg, err) { statusMsg = msg ? { msg, err } : null; renderStatus(); }
+function renderStatus() {
+  statusEl.className = 'sub' + (statusMsg?.err ? ' err' : '');
+  if (statusMsg) { statusEl.replaceChildren(statusMsg.msg); return; }
+  statusEl.replaceChildren(unsaved.length ? 'Saving…' : 'Saved to your private GitHub repo', ' · ',
+    h('button', { class: 'linkbtn', type: 'button', onclick: () => { if (confirm('Forget the GitHub token on this device?')) { store.clear(); location.reload(); } } }, 'Disconnect this device'));
+}
+
+const TITLES = { income: 'Income', expense: 'Expenses' };
+const totals = d => {
+  const t = { income: 0, expense: 0 };
+  d.entries.forEach(e => t[e.type] += e.cents);
+  return t;
+};
+
+let editing = null; // id of the entry being edited
+
+function render() {
+  renderStatus();
+  const d = current(), t = totals(d), net = t.income - t.expense;
+  document.getElementById('tiles').replaceChildren(
+    h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Income'), h('span', { class: 'v' }, fmt(t.income))),
+    h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Expenses'), h('span', { class: 'v' }, fmt(t.expense))),
+    h('div', { class: 'tile result ' + (net >= 0 ? 'profit' : 'loss') },
+      h('span', { class: 'eyebrow' }, net >= 0 ? 'Profit' : 'Loss'), h('span', { class: 'v' }, fmt(net))),
+  );
+  for (const type of ['income', 'expense']) renderLedger(d, type, t[type]);
+}
+
+function renderLedger(d, type, total) {
+  const list = d.entries.filter(e => e.type === type);
+  const rows = list.map(e => e.id === editing ? editRow(e) : h('tr', { class: 'row', tabindex: 0, title: 'Edit',
+    onclick: () => startEdit(e.id),
+    onkeydown: ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); startEdit(e.id); } } },
+    h('td', {}, e.desc), h('td', { class: 'amt' }, fmt(e.cents))));
+  if (!list.length) rows.push(h('tr', { class: 'empty' }, h('td', { colspan: 2 }, `No ${TITLES[type].toLowerCase()} yet.`)));
+
+  const desc = h('input', { class: 'field', name: 'desc', placeholder: type === 'income' ? 'What sold' : 'What it was for', 'aria-label': 'Description', required: true, autocomplete: 'off' });
+  const amt = h('input', { class: 'field amount', name: 'amount', placeholder: '0.00', inputmode: 'decimal', 'aria-label': 'Amount', required: true, autocomplete: 'off' });
+  const add = h('form', { class: 'entry', onsubmit: ev => {
+    ev.preventDefault();
+    const cents = parseAmount(amt.value), text = desc.value.trim();
+    if (!text) return desc.focus();
+    if (cents == null) { amt.setCustomValidity('Enter an amount, e.g. 120.50'); amt.reportValidity(); return; }
+    const entry = { id: newId(), type, desc: text, cents, added: new Date().toLocaleDateString('en-CA') };
+    change(d => d.entries.push(entry), `Add ${type}: ${text}`);
+    document.querySelector(`#${type} input[name=desc]`).focus();
+  }}, desc, amt, h('button', { class: 'btn', type: 'submit' }, type === 'income' ? 'Add income' : 'Add expense'));
+  amt.addEventListener('input', () => amt.setCustomValidity(''));
+
+  document.getElementById(type).replaceChildren(
+    h('h2', {}, TITLES[type], h('small', {}, `${list.length} · ${fmt(total)}`)),
+    h('div', { class: 'box' }, h('table', {}, h('tbody', {}, rows)), add));
+}
+
+function editRow(e) {
+  const desc = h('input', { class: 'field', value: e.desc, 'aria-label': 'Description', required: true, autocomplete: 'off' });
+  const amt = h('input', { class: 'field amount', value: (e.cents / 100).toFixed(2), inputmode: 'decimal', 'aria-label': 'Amount', required: true, autocomplete: 'off' });
+  amt.addEventListener('input', () => amt.setCustomValidity(''));
+  const form = h('form', { class: 'entry',
+    onkeydown: ev => { if (ev.key === 'Escape') { editing = null; render(); } },
+    onsubmit: ev => {
+      ev.preventDefault();
+      const cents = parseAmount(amt.value), text = desc.value.trim();
+      if (!text) return desc.focus();
+      if (cents == null) { amt.setCustomValidity('Enter an amount, e.g. 120.50'); amt.reportValidity(); return; }
+      editing = null;
+      if (text === e.desc && cents === e.cents) return render();
+      change(d => { const x = d.entries.find(y => y.id === e.id); if (x) Object.assign(x, { desc: text, cents }); }, `Edit ${e.type}: ${text}`);
+    } },
+    desc, amt,
+    h('div', { class: 'actions' },
+      h('button', { class: 'btn quiet del', type: 'button', onclick: () => {
+        if (!confirm(`Delete “${e.desc}” (${fmt(e.cents)})?`)) return;
+        editing = null;
+        change(d => { d.entries = d.entries.filter(y => y.id !== e.id); }, `Delete ${e.type}: ${e.desc}`);
+      } }, 'Delete'),
+      h('button', { class: 'btn quiet', type: 'button', onclick: () => { editing = null; render(); } }, 'Cancel'),
+      h('button', { class: 'btn', type: 'submit' }, 'Save')));
+  return h('tr', { class: 'editing' }, h('td', { colspan: 2 }, form));
+}
+
+function startEdit(id) {
+  editing = id; render();
+  document.querySelector('tr.editing input')?.focus();
+}
+
+// ---------- start ----------
+async function start() {
+  if (!token) return showConnect();
+  try {
+    await load();
+  } catch (e) {
+    if (e.auth) { store.clear(); token = null; return showConnect('That token can’t open the ledger. Check it has Contents access to flower-ledger.'); }
+    return setStatus(`Couldn't load the ledger (${e.message}). Try reloading.`, true);
+  }
+  document.getElementById('connect').hidden = true;
+  document.getElementById('app').hidden = false;
+  render();
+}
+function showConnect(msg) {
+  document.getElementById('app').hidden = true;
+  document.getElementById('connect').hidden = false;
+  setStatus(msg || 'Not connected on this device yet.', !!msg);
+}
+document.getElementById('connectForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  token = document.getElementById('token').value.trim();
+  store.set(token);
+  setStatus('Connecting…');
+  start();
+});
+// Pick up changes made on another device when coming back to this tab.
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState !== 'visible' || !doc || unsaved.length || editing) return;
+  try { await load(); render(); } catch {}
+});
+start();
+})();
+</script>
+</body>
+</html>
