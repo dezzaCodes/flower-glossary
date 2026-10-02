@@ -112,6 +112,9 @@ td .line2{display:block;color:var(--muted);font-size:12.5px}
 .pill.c3{background:var(--c3-bg);color:var(--c3-fg)} .pill.c4{background:var(--c4-bg);color:var(--c4-fg)}
 .pill.c5{background:var(--c5-bg);color:var(--c5-fg)} .pill.c6{background:var(--c6-bg);color:var(--c6-fg)}
 .pill.chip-col{white-space:nowrap}
+.pill.swatch-pill{display:inline-flex;align-items:center;gap:6px;background:var(--sunk);color:var(--ink);font-weight:500;white-space:nowrap}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.opt .swatch{margin-right:-2px}
 .num{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border-radius:6px;background:var(--clay-soft);color:var(--clay);font:500 12px var(--mono)}
 .dash{color:var(--faint)}
 .empty{padding:48px 20px;text-align:center;color:var(--muted)}
@@ -234,6 +237,13 @@ META.filter(m => CHIP_COLS.includes(m.name.toLowerCase())).forEach(m => {
   const vals = [...new Set(ROWS.map(r => r.v[m.c]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   chipColour.set(m.c, new Map(vals.map((v, k) => [v, 'c' + (k % 6 + 1)])));
 });
+// Colour columns show a swatch of the named colour beside the value.
+const SWATCH_COLS = ['colour', 'color'];
+const SWATCHES = { red: '#D2353B', pink: '#EC86B0', orange: '#F08A35', yellow: '#F3CB45', green: '#4C9A58', blue: '#4B80D2',
+  purple: '#8B5CC4', white: '#FFFFFF', cream: '#F2E6C4', brown: '#7B5535', black: '#222222', grey: '#9A9A9A',
+  multicolour: 'conic-gradient(#D2353B, #F3CB45, #4C9A58, #4B80D2, #8B5CC4, #D2353B)' };
+const swatchCols = new Set(META.filter(m => SWATCH_COLS.includes(m.name.toLowerCase())).map(m => m.c));
+const swatch = v => SWATCHES[v.toLowerCase()] ? h('span', { class: 'swatch', style: 'background:' + SWATCHES[v.toLowerCase()], 'aria-hidden': 'true' }) : null;
 const chip = (c, v) => h('span', { class: 'pill chip-col ' + (chipColour.get(c)?.get(v) || 'no') }, v);
 
 const state = { q: '', sort: { c: 0, dir: 1 }, sel: new Map(), view: [] };
@@ -286,7 +296,7 @@ for (const m of FACETED) {
     }});
     const count = h('span', { class: 'c' });
     const label = h('label', { class: 'opt', for: cb.id }, cb,
-      t === BLANK ? h('span', { class: 'blank' }, '(blank)') : h('span', {}, t), count);
+      t === BLANK ? h('span', { class: 'blank' }, '(blank)') : h('span', {}, swatchCols.has(m.c) ? [swatch(t), ' '] : null, t), count);
     items.set(t, { label, cb, count, text: t === BLANK ? '' : t.toLowerCase() });
     list.append(label);
   }
@@ -335,6 +345,7 @@ const renderHead = () => {
 const cell = (m, v, first) => {
   if (!v) return h('span', { class: 'dash' }, '—');
   if (chipColour.has(m.c)) return chip(m.c, v);
+  if (swatchCols.has(m.c)) return h('span', { class: 'pill swatch-pill' }, swatch(v), v);
   if (m.kind === 'bool') return h('span', { class: 'pill ' + v.toLowerCase() }, v);
   if (m.kind === 'number') return h('span', { class: 'num' }, v);
   if (m.kind === 'money') return h('span', { class: 'mono' }, v);
@@ -460,7 +471,7 @@ function openDetail(idx) {
       h('dt', {}, m.name),
       h('dd', {}, !r.v[m.c] ? h('span', { class: 'dash' }, '—')
         : m.kind === 'url' ? h('a', { href: r.v[m.c], target: '_blank', rel: 'noopener' }, r.v[m.c])
-        : m.kind === 'text' && !chipColour.has(m.c) ? r.v[m.c] : cell(m, r.v[m.c]))
+        : m.kind === 'text' && !chipColour.has(m.c) && !swatchCols.has(m.c) ? r.v[m.c] : cell(m, r.v[m.c]))
     ])),
     sibs.length ? h('div', { class: 'siblings' },
       h('h3', { class: 'eyebrow' }, `Other ${r.v[0]} entries (${sibs.length})`),
