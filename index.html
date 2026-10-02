@@ -312,6 +312,9 @@ const h = (tag, attrs = {}, ...kids) => {
   return el;
 };
 
+// replaceChildren would print null/false as text, so drop empty parts first.
+const fill = (el, ...kids) => el.replaceChildren(...kids.flat().filter(k => k != null && k !== false));
+
 // ---------- header ----------
 const synced = DATA.synced ? new Date(DATA.synced) : null;
 document.getElementById('sub').append(
@@ -482,7 +485,7 @@ const renderBar = () => {
       h('span', {}, COLS[c] + ':'), t === BLANK ? '(blank)' : t, h('i', { 'aria-hidden': 'true' }, '×')));
   }
   const n = nActive();
-  bar.replaceChildren(
+  fill(bar,
     h('button', { class: 'chip show-filters', type: 'button', 'aria-expanded': String(filtersEl.classList.contains('open')),
       onclick: () => { filtersEl.classList.toggle('open'); renderBar(); } }, filtersEl.classList.contains('open') ? 'Hide filters' : `Filters${n ? ` (${n})` : ''}`),
     h('label', { class: 'mobile-sort' }, 'Sort by ',
@@ -522,7 +525,7 @@ function openDetail(idx) {
   const DESC = colIdx('description'), FROM = colIdx('where from');
   const sibs = ROWS.filter(o => o !== r && o.v[0] && o.v[0].toLowerCase() === r.v[0].toLowerCase());
   const close = h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Close', onclick: closeDetail }, '×');
-  sheet.replaceChildren(
+  fill(sheet,
     h('div', { class: 'sheet-nav' },
       h('span', { class: 'pos' }, `${idx + 1} / ${state.view.length}`),
       h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Previous', disabled: idx === 0 || null, onclick: () => openDetail(idx - 1) }, '←'),
