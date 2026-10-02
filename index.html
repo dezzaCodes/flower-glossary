@@ -60,8 +60,10 @@ aside.filters{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-
 details.facet{border-top:1px solid var(--line);padding-block:10px}
 details.facet summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:600;text-transform:capitalize}
 details.facet summary::-webkit-details-marker{display:none}
-details.facet summary::after{content:"";width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 auto}
+details.facet summary::after{content:"";width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 2px}
 details.facet[open] summary::after{transform:rotate(-135deg);margin-top:4px}
+details.facet summary > .name{flex:1}
+.facet .clear{font-weight:400}
 .facet .n-sel{font:500 11px var(--body);background:var(--accent);color:var(--accent-ink);border-radius:99px;padding:1px 7px}
 .facet-search{width:100%;font:inherit;font-size:13px;margin:8px 0 4px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
 .opts{max-height:232px;overflow:auto;margin-top:6px;display:flex;flex-direction:column;gap:1px}
@@ -305,7 +307,9 @@ for (const m of FACETED) {
     list.append(label);
   }
   const nSel = h('span', { class: 'n-sel', hidden: true });
-  const summary = h('summary', {}, h('span', {}, m.name), nSel);
+  const clear = h('button', { class: 'linkbtn clear', type: 'button', hidden: true, 'aria-label': `Clear ${m.name} filter`,
+    onclick: e => { e.preventDefault(); e.stopPropagation(); state.sel.delete(m.c); update(); } }, 'Clear');
+  const summary = h('summary', {}, h('span', { class: 'name' }, m.name), nSel, clear);
   const kids = [summary];
   if (toks.length > 10 && m.kind !== 'money') { // prices are a short sorted list, so no search box
     kids.push(h('input', { class: 'facet-search', type: 'search', id: `fs-${m.c}`, placeholder: `Find a ${m.name.toLowerCase()}…`, 'aria-label': `Find a ${m.name.toLowerCase()}`,
@@ -314,12 +318,12 @@ for (const m of FACETED) {
   kids.push(list);
   const det = h('details', { class: 'facet', open: toks.length <= 30 || null }, kids);
   facetsBox.append(det);
-  facetEls.set(m.c, { items, nSel });
+  facetEls.set(m.c, { items, nSel, clear });
 }
 
 const updateFacets = () => {
   for (const m of FACETED) {
-    const { items, nSel } = facetEls.get(m.c);
+    const { items, nSel, clear } = facetEls.get(m.c);
     const counts = new Map();
     ROWS.forEach(r => { if (passes(r, m.c)) r.tok[m.c].forEach(t => counts.set(t, (counts.get(t) || 0) + 1)); });
     const sel = state.sel.get(m.c) || new Set();
@@ -329,7 +333,7 @@ const updateFacets = () => {
       it.cb.checked = sel.has(t);
       it.label.classList.toggle('zero', !n && !sel.has(t));
     });
-    nSel.hidden = !sel.size; nSel.textContent = sel.size;
+    nSel.hidden = clear.hidden = !sel.size; nSel.textContent = sel.size;
   }
 };
 
