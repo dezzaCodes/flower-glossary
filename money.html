@@ -13,7 +13,7 @@
 :root{
   --bg:#F4F6F1; --surface:#FFFFFF; --sunk:#EBEFE7; --ink:#1E2620; --muted:#5D6A61; --faint:#8A968D;
   --line:#DCE2D8; --accent:#7B2E63; --accent-ink:#FFFFFF; --accent-soft:#F3E5EE;
-  --moss:#3D6A48; --moss-soft:#E2EEE4; --loss:#8A2F45; --loss-soft:#F7E1E6;
+  --moss:#3D6A48; --moss-soft:#E2EEE4; --clay:#8A5A2B; --clay-soft:#F3E9DD; --loss:#8A2F45; --loss-soft:#F7E1E6;
   --display:"Young Serif",Georgia,"Times New Roman",serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -22,13 +22,13 @@
   color-scheme:dark;
   --bg:#121613; --surface:#1A201C; --sunk:#151A16; --ink:#E7ECE5; --muted:#A0ACA3; --faint:#76827A;
   --line:#2C352F; --accent:#DE93C4; --accent-ink:#1E1219; --accent-soft:#3A2333;
-  --moss:#92C59F; --moss-soft:#1F3226; --loss:#EFA2B4; --loss-soft:#3D2028;
+  --moss:#92C59F; --moss-soft:#1F3226; --clay:#E0B17F; --clay-soft:#3A2C1D; --loss:#EFA2B4; --loss-soft:#3D2028;
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
   --bg:#121613; --surface:#1A201C; --sunk:#151A16; --ink:#E7ECE5; --muted:#A0ACA3; --faint:#76827A;
   --line:#2C352F; --accent:#DE93C4; --accent-ink:#1E1219; --accent-soft:#3A2333;
-  --moss:#92C59F; --moss-soft:#1F3226; --loss:#EFA2B4; --loss-soft:#3D2028;
+  --moss:#92C59F; --moss-soft:#1F3226; --clay:#E0B17F; --clay-soft:#3A2C1D; --loss:#EFA2B4; --loss-soft:#3D2028;
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body);padding:0 16px}
@@ -54,6 +54,15 @@ input:focus-visible,button:focus-visible,tr:focus-visible{outline:2px solid var(
 .tile.result.loss{background:var(--loss-soft);border-color:transparent}
 .tile.result.loss .v,.tile.result.loss .eyebrow{color:var(--loss)}
 
+.show{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.seg{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:99px;padding:3px}
+.seg button{font:500 14px var(--body);border:0;background:none;color:var(--muted);padding:5px 14px;border-radius:99px;cursor:pointer}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.cat{display:inline-block;margin-left:8px;font-size:11.5px;font-weight:600;padding:0 8px;border-radius:99px;vertical-align:1px}
+.cat.flowers{background:var(--accent-soft);color:var(--accent)}
+.cat.juju{background:var(--clay-soft);color:var(--clay)}
+select.field{width:auto;padding-right:6px}
 .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
 .ledger h2{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font:400 24px/1.2 var(--display);margin:0 0 10px}
 .ledger h2 small{font:500 14px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
@@ -64,9 +73,10 @@ td.amt{font:13.5px var(--mono);font-variant-numeric:tabular-nums;text-align:righ
 tbody tr.row{cursor:pointer}
 tbody tr.row:hover td{background:var(--sunk)}
 .empty td{color:var(--muted);text-align:center;padding:24px}
-form.entry{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;padding:10px;background:var(--sunk)}
+form.entry{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;grid-auto-flow:dense;gap:8px;padding:10px;background:var(--sunk)}
 tr.editing td{padding:0;background:var(--sunk)}
-tr.editing form.entry{grid-template-columns:minmax(0,1fr) 110px;}
+tr.editing form.entry{grid-template-columns:minmax(0,1fr) 110px auto;}
+form.entry.with-cat{grid-template-columns:minmax(0,1fr) 110px auto auto}
 tr.editing .actions{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
 tr.editing .actions .del{margin-right:auto;color:var(--loss)}
 .field{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);min-width:0;width:100%}
@@ -89,7 +99,8 @@ tr.editing .actions .del{margin-right:auto;color:var(--loss)}
   .tiles{grid-template-columns:1fr 1fr;gap:8px}
   .tile{padding:12px 14px}
   .tile.result{grid-column:1/-1}
-  form.entry{grid-template-columns:minmax(0,1fr) 92px}
+  form.entry,form.entry.with-cat,tr.editing form.entry{grid-template-columns:minmax(0,1fr) 92px}
+  form.entry select.field{grid-column:1/-1;width:100%}
   form.entry .btn{grid-column:1/-1}
   tr.editing .actions .btn{grid-column:auto}
   .connect form{flex-direction:column}
@@ -122,6 +133,7 @@ tr.editing .actions .del{margin-right:auto;color:var(--loss)}
   </section>
 
   <div id="app" hidden>
+    <div class="show"><span class="eyebrow">Show</span><div class="seg" id="seg" role="group" aria-label="Show"></div></div>
     <div class="tiles" id="tiles"></div>
     <div class="cols">
       <section class="ledger" id="income"></section>
@@ -215,6 +227,14 @@ function renderStatus() {
 }
 
 const TITLES = { income: 'Income', expense: 'Expenses' };
+// Every entry belongs to one business. Entries saved before categories existed are flowers.
+const CATS = { flowers: 'Flowers', juju: 'Juju' };
+const catOf = e => e.category || 'flowers';
+const VIEW_KEY = 'flower-ledger-view';
+let view = (() => { try { const v = localStorage.getItem(VIEW_KEY); return v in CATS ? v : 'all'; } catch { return 'all'; } })();
+const setView = v => { view = v; editing = null; try { localStorage.setItem(VIEW_KEY, v); } catch {} render(); };
+const catSelect = (value, label) => h('select', { class: 'field', name: 'category', 'aria-label': label },
+  Object.entries(CATS).map(([k, name]) => h('option', { value: k, selected: k === value || null }, name)));
 const totals = d => {
   const t = { income: 0, expense: 0 };
   d.entries.forEach(e => t[e.type] += e.cents);
@@ -225,7 +245,10 @@ let editing = null; // id of the entry being edited
 
 function render() {
   renderStatus();
-  const d = current(), t = totals(d), net = t.income - t.expense;
+  const all = current(), d = { entries: all.entries.filter(e => view === 'all' || catOf(e) === view) };
+  const t = totals(d), net = t.income - t.expense;
+  document.getElementById('seg').replaceChildren(...[['all', 'Both'], ...Object.entries(CATS)].map(([k, name]) =>
+    h('button', { type: 'button', 'aria-pressed': String(view === k), onclick: () => setView(k) }, name)));
   document.getElementById('tiles').replaceChildren(
     h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Income'), h('span', { class: 'v' }, fmt(t.income))),
     h('div', { class: 'tile' }, h('span', { class: 'eyebrow' }, 'Expenses'), h('span', { class: 'v' }, fmt(t.expense))),
@@ -240,20 +263,21 @@ function renderLedger(d, type, total) {
   const rows = list.map(e => e.id === editing ? editRow(e) : h('tr', { class: 'row', tabindex: 0, title: 'Edit',
     onclick: () => startEdit(e.id),
     onkeydown: ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); startEdit(e.id); } } },
-    h('td', {}, e.desc), h('td', { class: 'amt' }, fmt(e.cents))));
+    h('td', {}, e.desc, view === 'all' ? h('span', { class: 'cat ' + catOf(e) }, CATS[catOf(e)]) : null), h('td', { class: 'amt' }, fmt(e.cents))));
   if (!list.length) rows.push(h('tr', { class: 'empty' }, h('td', { colspan: 2 }, `No ${TITLES[type].toLowerCase()} yet.`)));
 
   const desc = h('input', { class: 'field', name: 'desc', placeholder: type === 'income' ? 'What sold' : 'What it was for', 'aria-label': 'Description', required: true, autocomplete: 'off' });
   const amt = h('input', { class: 'field amount', name: 'amount', placeholder: '0.00', inputmode: 'decimal', 'aria-label': 'Amount', required: true, autocomplete: 'off' });
-  const add = h('form', { class: 'entry', onsubmit: ev => {
+  const cat = view === 'all' ? catSelect('flowers', 'Business') : null;
+  const add = h('form', { class: 'entry' + (cat ? ' with-cat' : ''), onsubmit: ev => {
     ev.preventDefault();
     const cents = parseAmount(amt.value), text = desc.value.trim();
     if (!text) return desc.focus();
     if (cents == null) { amt.setCustomValidity('Enter an amount, e.g. 120.50'); amt.reportValidity(); return; }
-    const entry = { id: newId(), type, desc: text, cents, added: new Date().toLocaleDateString('en-CA') };
+    const entry = { id: newId(), type, category: cat ? cat.value : view, desc: text, cents, added: new Date().toLocaleDateString('en-CA') };
     change(d => d.entries.push(entry), `Add ${type}: ${text}`);
     document.querySelector(`#${type} input[name=desc]`).focus();
-  }}, desc, amt, h('button', { class: 'btn', type: 'submit' }, type === 'income' ? 'Add income' : 'Add expense'));
+  }}, desc, amt, cat, h('button', { class: 'btn', type: 'submit' }, type === 'income' ? 'Add income' : 'Add expense'));
   amt.addEventListener('input', () => amt.setCustomValidity(''));
 
   document.getElementById(type).replaceChildren(
@@ -265,6 +289,7 @@ function editRow(e) {
   const desc = h('input', { class: 'field', value: e.desc, 'aria-label': 'Description', required: true, autocomplete: 'off' });
   const amt = h('input', { class: 'field amount', value: (e.cents / 100).toFixed(2), inputmode: 'decimal', 'aria-label': 'Amount', required: true, autocomplete: 'off' });
   amt.addEventListener('input', () => amt.setCustomValidity(''));
+  const cat = catSelect(catOf(e), 'Business');
   const form = h('form', { class: 'entry',
     onkeydown: ev => { if (ev.key === 'Escape') { editing = null; render(); } },
     onsubmit: ev => {
@@ -273,10 +298,10 @@ function editRow(e) {
       if (!text) return desc.focus();
       if (cents == null) { amt.setCustomValidity('Enter an amount, e.g. 120.50'); amt.reportValidity(); return; }
       editing = null;
-      if (text === e.desc && cents === e.cents) return render();
-      change(d => { const x = d.entries.find(y => y.id === e.id); if (x) Object.assign(x, { desc: text, cents }); }, `Edit ${e.type}: ${text}`);
+      if (text === e.desc && cents === e.cents && cat.value === catOf(e)) return render();
+      change(d => { const x = d.entries.find(y => y.id === e.id); if (x) Object.assign(x, { desc: text, cents, category: cat.value }); }, `Edit ${e.type}: ${text}`);
     } },
-    desc, amt,
+    desc, amt, cat,
     h('div', { class: 'actions' },
       h('button', { class: 'btn quiet del', type: 'button', onclick: () => {
         if (!confirm(`Delete “${e.desc}” (${fmt(e.cents)})?`)) return;
