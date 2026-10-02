@@ -142,7 +142,9 @@ a{color:var(--accent)}
 .iconbtn{display:grid;place-items:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;font-size:16px}
 .iconbtn:hover:not(:disabled){background:var(--sunk)}
 .iconbtn:disabled{opacity:.35;cursor:default}
-.sheet h2{font:400 32px/1.1 var(--display);margin:0;text-transform:capitalize;text-wrap:balance}
+.sheet h2{font:400 32px/1.1 var(--display);margin:0;text-wrap:balance}
+.sheet h2 .variety{display:block;margin-top:6px;font:500 15px/1.3 var(--body);color:var(--muted)}
+td.first .variety{display:block;font:500 12.5px/1.3 var(--body);color:var(--muted)}
 dl.fields{margin:0;display:grid;grid-template-columns:auto 1fr;border-top:1px solid var(--line)}
 dl.fields dt,dl.fields dd{padding:10px 0;border-bottom:1px solid var(--line);margin:0}
 dl.fields dt{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding-right:20px;padding-top:13px}
@@ -400,8 +402,16 @@ const renderHead = () => {
   }));
 };
 
+// "Chrysanthemum (one ply)" -> name "Chrysanthemum" with "One ply" shown as a subtext underneath.
+const splitName = v => {
+  const m = v.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+  return m && m[1] ? [m[1], sentence(m[2].trim())] : [v, ''];
+};
+const nameParts = v => { const [name, variety] = splitName(v); return [name, variety ? h('span', { class: 'variety' }, variety) : null]; };
+
 const cell = (m, v, first) => {
   if (!v) return h('span', { class: 'dash' }, '—');
+  if (first) return nameParts(v);
   if (chipColour.has(m.c)) return chip(m.c, v);
   if (swatchCols.has(m.c)) return h('span', { class: 'swatches' }, splitCell(m.name, v).map(t => h('span', { class: 'pill swatch-pill' }, swatch(t), t)));
   if (m.kind === 'bool') return h('span', { class: 'pill ' + v.toLowerCase() }, v);
@@ -533,7 +543,7 @@ function openDetail(idx) {
       h('button', { class: 'iconbtn', type: 'button', 'aria-label': 'Next', disabled: idx === state.view.length - 1 || null, onclick: () => openDetail(idx + 1) }, '→'),
       close),
     HAS_IMG && IMGS[r.i] ? h('img', { class: 'hero', src: IMGS[r.i], alt: '' }) : null,
-    h('h2', { id: 'sheetTitle' }, r.v[0] || '(untitled)'),
+    h('h2', { id: 'sheetTitle' }, r.v[0] ? nameParts(r.v[0]) : '(untitled)'),
     h('dl', { class: 'fields' }, ORDERED.filter(m => m.c !== 0 && m.kind !== 'empty' && m.name.toLowerCase() !== 'image').flatMap(m => [
       h('dt', {}, m.name),
       h('dd', {}, !r.v[m.c] ? h('span', { class: 'dash' }, '—')
@@ -541,7 +551,7 @@ function openDetail(idx) {
         : m.kind === 'text' && !chipColour.has(m.c) && !swatchCols.has(m.c) ? r.v[m.c] : cell(m, r.v[m.c]))
     ])),
     sibs.length ? h('div', { class: 'siblings' },
-      h('h3', { class: 'eyebrow' }, `Other ${r.v[0]} entries (${sibs.length})`),
+      h('h3', { class: 'eyebrow' }, `Other ${splitName(r.v[0]).filter(Boolean).join(', ')} entries (${sibs.length})`),
       sibs.map(o => h('button', { class: 'sib', type: 'button', onclick: () => {
         let j = state.view.indexOf(o);
         if (j < 0) { state.view.splice(idx + 1, 0, o); renderBody(); j = idx + 1; }
